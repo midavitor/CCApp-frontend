@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CallProvider } from './context/CallContext';
 import Login from './components/Login';
@@ -7,6 +7,14 @@ import './App.css';
 // Componente principal de la aplicación
 const AppContent = () => {
   const { isAuthenticated, agentData, loading, error, user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Debug: Mostrar datos del agente en consola
+  useEffect(() => {
+    if (agentData) {
+      console.log('🔍 Debug - Datos del Agente:', agentData);
+    }
+  }, [agentData]);
 
   const handleLogout = async () => {
     const result = await logout();
@@ -55,36 +63,99 @@ const AppContent = () => {
       </header>
       
       <main className="app-main">
-        <div className="dashboard-content">
-          <h2>Dashboard de Agente</h2>
-          <p>Sistema de gestión de llamadas en funcionamiento</p>
-          
-          {/* Aquí irán los componentes del dashboard */}
-          <div className="dashboard-cards">
-            <div className="card">
-              <h3>Llamadas Activas</h3>
-              <p>0</p>
+        <div className="main-layout">
+          {/* Panel izquierdo - FIJO */}
+          <div className="left-panel">
+            <h2>Dashboard de Agente</h2>
+            <p>Sistema de gestión de llamadas en funcionamiento</p>
+            
+            {/* Dashboard cards - FIJAS */}
+            <div className="dashboard-cards">
+              <div className="card">
+                <h3>Llamadas Activas</h3>
+                <p>0</p>
+              </div>
+              <div className="card">
+                <h3>Estado</h3>
+                <p>{agentData?.status || 'Desconectado'}</p>
+              </div>
+              <div className="card">
+                <h3>Equipo</h3>
+                <p>{agentData?.teamID || 'Sin asignar'}</p>
+              </div>
+              <div className="card">
+                <h3>Rol</h3>
+                <p>{agentData?.role || 'Agente'}</p>
+              </div>
             </div>
-            <div className="card">
-              <h3>Estado</h3>
-              <p>{agentData?.status || 'Desconectado'}</p>
-            </div>
-            <div className="card">
-              <h3>Equipo</h3>
-              <p>{agentData?.teamID || 'Sin asignar'}</p>
-            </div>
-            <div className="card">
-              <h3>Rol</h3>
-              <p>{agentData?.role || 'Agente'}</p>
-            </div>
+            
+            {/* Debug info movido a consola - ver DevTools */}
           </div>
-          
-          {/* Debug info - temporal */}
-          <div style={{ marginTop: '24px', padding: '16px', background: '#f8f9fa', borderRadius: '8px' }}>
-            <h4>Debug - Datos del Agente:</h4>
-            <pre style={{ fontSize: '12px', overflow: 'auto' }}>
-              {JSON.stringify(agentData, null, 2)}
-            </pre>
+
+          {/* Panel derecho - TABS */}
+          <div className="right-panel">
+            {/* Navegación de tabs */}
+            <div className="tabs-nav">
+              <button 
+                className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                Dashboard
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'calls' ? 'active' : ''}`}
+                onClick={() => setActiveTab('calls')}
+              >
+                Llamadas
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'reports' ? 'active' : ''}`}
+                onClick={() => setActiveTab('reports')}
+              >
+                Reportes
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+                onClick={() => setActiveTab('settings')}
+              >
+                Configuración
+              </button>
+            </div>
+
+            {/* Contenido de tabs */}
+            <div className="tab-content">
+              {activeTab === 'dashboard' && (
+                <div className="tab-panel">
+                  <h3>Resumen General</h3>
+                  <p>Vista general del estado del agente y métricas importantes.</p>
+                  {/* Aquí se agregarán componentes de dashboard */}
+                </div>
+              )}
+
+              {activeTab === 'calls' && (
+                <div className="tab-panel">
+                  <h3>Gestión de Llamadas</h3>
+                  <p>Panel para manejar llamadas entrantes y salientes.</p>
+                  {/* Aquí se agregará el CallPanel de Twilio */}
+                </div>
+              )}
+
+              {activeTab === 'reports' && (
+                <div className="tab-panel">
+                  <h3>Reportes y Análisis</h3>
+                  <p>Estadísticas y reportes de rendimiento.</p>
+                  {/* Aquí se agregarán componentes de reportes */}
+                </div>
+              )}
+
+              {activeTab === 'settings' && (
+                <div className="tab-panel">
+                  <h3>Configuración</h3>
+                  <p>Ajustes del agente y preferencias del sistema.</p>
+                  {/* Aquí se agregarán componentes de configuración */}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
