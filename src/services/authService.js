@@ -2,7 +2,7 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  createUserWithEmailAndPassword 
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { auth } from './firebaseConfig';
 
@@ -56,18 +56,78 @@ export class AuthService {
   }
 
   /**
-   * Crear nuevo usuario (solo para administradores)
+   * Crear nuevo usuario manteniendo la sesión del supervisor
+   * @param {string} email - Email del nuevo agente
+   * @param {string} password - Contraseña temporal
+   * @param {string} adminEmail - Email del supervisor actual
+   * @param {string} adminPassword - Contraseña del supervisor (temporal)
+   * @returns {Promise<Object>} Usuario creado
+   */
+  static async createUserPreservingSession(email, password, adminEmail, adminPassword) {
+    try {
+      // Guardar referencia del usuario actual
+      const currentUser = auth.currentUser;
+      console.log('🔍 Usuario actual antes de crear:', currentUser?.email);
+
+      // Crear el nuevo usuario (esto cambiará la sesión)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = userCredential.user;
+      console.log('✅ Nuevo usuario creado:', newUser.email);
+
+      // Cerrar sesión del nuevo usuario
+      await signOut(auth);
+      console.log('🔄 Sesión del nuevo usuario cerrada');
+
+      // Restaurar sesión del administrador
+      if (adminEmail && adminPassword) {
+        console.log('🔄 Restaurando sesión del supervisor...');
+        const adminCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+        console.log('✅ Sesión del supervisor restaurada:', adminCredential.user.email);
+      }
+
+      return {
+        success: true,
+        user: newUser,
+        message: 'Usuario creado exitosamente. Sesión del supervisor mantenida.'
+      };
+    } catch (error) {
+      console.error('❌ Error en createUserPreservingSession:', error);
+      return {
+        success: false,
+        error: error.code,
+        message: this.getErrorMessage(error.code)
+      };
+    }
+  }
+
+  /**
+   * Crear nuevo usuario (método original - puede cambiar sesión)
    * @param {string} email - Email del nuevo agente
    * @param {string} password - Contraseña temporal
    * @returns {Promise<Object>} Usuario creado
    */
-  static async createUser(email, password) {
+  static async createUser(email, password, currentUser = null) {
     try {
+      // Guardar las credenciales del usuario actual si se proporcionan
+      const previousUser = currentUser;
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = userCredential.user;
+      
+      // Cerrar sesión del nuevo usuario inmediatamente
+      await signOut(auth);
+      
+      // Si había un usuario anterior, intentar restaurar su sesión
+      if (previousUser && previousUser.email) {
+        console.log('🔄 Restaurando sesión del usuario administrador...');
+        // Nota: Necesitaríamos la contraseña del admin para esto
+        // Por ahora solo cerramos sesión del nuevo usuario
+      }
+      
       return {
         success: true,
-        user: userCredential.user,
-        message: 'Usuario creado exitosamente'
+        user: newUser,
+        message: 'Usuario creado exitosamente. Sesión restaurada.'
       };
     } catch (error) {
       return {

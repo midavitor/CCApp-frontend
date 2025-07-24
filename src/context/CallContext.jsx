@@ -31,38 +31,40 @@ export const CallProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const unsubscribe = CallService.onActiveCallsChange((calls) => {
-      setActiveCalls(calls);
-      
-      // Verificar si hay una llamada activa para el agente actual
-      if (agentData) {
-        const agentActiveCall = calls.find(call => call.agentID === agentData.agentID);
-        setCurrentCall(agentActiveCall || null);
-      }
-    });
+    // TEMPORALMENTE COMENTADO: Requiere índice de Firestore
+    // const unsubscribe = CallService.onActiveCallsChange((calls) => {
+    //   setActiveCalls(calls);
+    //   
+    //   // Verificar si hay una llamada activa para el agente actual
+    //   if (agentData) {
+    //     const agentActiveCall = calls.find(call => call.agentID === agentData.agentID);
+    //     setCurrentCall(agentActiveCall || null);
+    //   }
+    // });
 
-    return unsubscribe;
+    // return unsubscribe;
   }, [isAuthenticated, agentData]);
 
   // Cargar historial de llamadas del agente
   useEffect(() => {
     if (!agentData) return;
 
-    const loadCallHistory = async () => {
-      setLoading(true);
-      try {
-        const result = await CallService.getCallsByAgent(agentData.agentID, 20);
-        if (result.success) {
-          setCallHistory(result.data);
-        }
-      } catch (error) {
-        setError('Error cargando historial de llamadas');
-      } finally {
-        setLoading(false);
-      }
-    };
+    // TEMPORALMENTE COMENTADO: Puede requerir índice de Firestore
+    // const loadCallHistory = async () => {
+    //   setLoading(true);
+    //   try {
+    //     const result = await CallService.getCallsByAgent(agentData.agentID, 20);
+    //     if (result.success) {
+    //       setCallHistory(result.data);
+    //     }
+    //   } catch (error) {
+    //     setError('Error cargando historial de llamadas');
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
 
-    loadCallHistory();
+    // loadCallHistory();
   }, [agentData]);
 
   /**

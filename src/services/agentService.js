@@ -4,6 +4,7 @@ import {
   getDoc, 
   getDocs, 
   addDoc, 
+  setDoc,
   updateDoc, 
   query, 
   where, 
@@ -103,6 +104,67 @@ export class AgentService {
           message: 'Agente no encontrado por email'
         };
       }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Crear un nuevo agente en Firestore
+   * @param {Object} agentData - Datos del agente
+   * @returns {Promise<Object>} Resultado de la creación
+   */
+  static async createAgent(agentData) {
+    try {
+      console.log('🔍 AgentService.createAgent - Iniciando creación con datos:', agentData);
+      // Usar addDoc para crear un documento con ID autogenerado
+      const agentDocRef = await addDoc(collection(db, 'agents'), {
+        ...agentData,
+        dateCreated: new Date(),
+        lastUpdated: new Date()
+      });
+      console.log('✅ AgentService.createAgent - Documento creado con ID:', agentDocRef.id);
+      return {
+        success: true,
+        id: agentDocRef.id,
+        message: 'Agente creado exitosamente'
+      };
+    } catch (error) {
+      console.error('❌ AgentService.createAgent - Error:', error);
+      console.error('❌ Error details:', error.message);
+      console.error('❌ Error code:', error.code);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Obtener todos los agentes con información completa
+   * @returns {Promise<Object>} Lista de agentes con emails
+   */
+  static async getAllAgentsWithEmails() {
+    try {
+      const agentsSnapshot = await getDocs(collection(db, 'agents'));
+      const agents = agentsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          // Si no hay email en el documento, intentamos construirlo
+          email: data.email || data.userEmail || data.emailAddress || 
+                 (data.name ? `${data.name.toLowerCase().replace(/\s+/g, '.')}@ccapp.com` : 'Sin email')
+        };
+      });
+      
+      return {
+        success: true,
+        data: agents
+      };
     } catch (error) {
       return {
         success: false,
