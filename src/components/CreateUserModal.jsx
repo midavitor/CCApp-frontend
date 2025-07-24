@@ -4,7 +4,7 @@ import AgentService from '../services/agentService';
 import { useAuth } from '../context/AuthContext';
 
 const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
-  const { user } = useAuth(); // Obtener el usuario actual del contexto
+  const { user, agentData } = useAuth(); // Obtener el usuario actual y sus datos del contexto
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -37,6 +37,11 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
 
       if (formData.password.length < 6) {
         throw new Error('La contraseña debe tener al menos 6 caracteres');
+      }
+
+      // Validación de permisos de rol
+      if (agentData?.role === 'supervisor' && (formData.role === 'supervisor' || formData.role === 'admin')) {
+        throw new Error('Los supervisores solo pueden crear agentes');
       }
 
       // Crear usuario usando el método que preserva la sesión
@@ -116,6 +121,13 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
           <button className="modal-close" onClick={handleClose}>×</button>
         </div>
         
+        {/* Mensaje informativo sobre permisos */}
+        {agentData?.role === 'supervisor' && (
+          <div className="info-banner">
+            <p>💡 <strong>Permisos:</strong> Como supervisor, solo puedes crear nuevos agentes.</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="user-form">
           <div className="form-group">
             <label htmlFor="name">Nombre Completo *</label>
@@ -166,8 +178,13 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
               onChange={handleInputChange}
             >
               <option value="agent">Agente</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="admin">Administrador</option>
+              {/* Solo los administradores pueden crear supervisores y otros administradores */}
+              {agentData?.role === 'admin' && (
+                <>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="admin">Administrador</option>
+                </>
+              )}
             </select>
           </div>
 

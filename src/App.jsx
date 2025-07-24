@@ -65,6 +65,45 @@ const AppContent = () => {
     loadAllUsers();
   };
 
+  const handleDeleteUser = async (userId, userRole, userName) => {
+    // Verificar permisos antes de eliminar
+    const currentUserRole = agentData?.role;
+    
+    // Validaciones de permisos
+    if (currentUserRole === 'supervisor' && userRole !== 'agent') {
+      alert('Los supervisores solo pueden eliminar agentes');
+      return;
+    }
+    
+    if (currentUserRole === 'admin' && userRole === 'admin') {
+      alert('Los administradores no pueden eliminar otros administradores');
+      return;
+    }
+    
+    // Confirmación antes de eliminar
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que deseas eliminar al usuario "${userName}"? Esta acción no se puede deshacer.`
+    );
+    
+    if (!confirmDelete) return;
+    
+    try {
+      // Llamar al servicio para eliminar el usuario
+      const result = await AgentService.deleteAgent(userId);
+      
+      if (result.success) {
+        alert(`Usuario "${userName}" eliminado exitosamente`);
+        // Recargar la lista de usuarios
+        loadAllUsers();
+      } else {
+        throw new Error(result.error || 'Error desconocido');
+      }
+    } catch (error) {
+      console.error('Error eliminando usuario:', error);
+      alert('Error al eliminar el usuario: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -319,6 +358,7 @@ const AppContent = () => {
                           <div>Equipo</div>
                           <div>Rol</div>
                           <div>Estado</div>
+                          <div>Acciones</div>
                         </div>
                         {allUsers.map(user => (
                           <div key={user.id} className="table-row">
@@ -340,6 +380,29 @@ const AppContent = () => {
                               <span className={`status ${user.status || 'undefined'}`}>
                                 {user.status || 'Sin estado'}
                               </span>
+                            </div>
+                            <div className="table-col table-actions">
+                              {/* Mostrar botón de eliminar según permisos */}
+                              {(() => {
+                                const currentUserRole = agentData?.role;
+                                const targetUserRole = user.role || 'agent';
+                                
+                                // Supervisores solo pueden eliminar agentes
+                                if (currentUserRole === 'supervisor' && targetUserRole !== 'agent') return null;
+                                
+                                // Administradores pueden eliminar agentes y supervisores, pero no otros administradores
+                                if (currentUserRole === 'admin' && targetUserRole === 'admin') return null;
+                                
+                                return (
+                                  <button
+                                    className="delete-btn"
+                                    onClick={() => handleDeleteUser(user.id, targetUserRole, user.name || user.email)}
+                                    title="Eliminar usuario"
+                                  >
+                                    ×
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </div>
                         ))}

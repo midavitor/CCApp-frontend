@@ -6,6 +6,7 @@ import {
   addDoc, 
   setDoc,
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   orderBy, 
@@ -136,6 +137,33 @@ export class AgentService {
       console.error('❌ AgentService.createAgent - Error:', error);
       console.error('❌ Error details:', error.message);
       console.error('❌ Error code:', error.code);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Eliminar un agente por su ID
+   * @param {string} agentId - ID del documento del agente
+   * @returns {Promise<Object>} Resultado de la eliminación
+   */
+  static async deleteAgent(agentId) {
+    try {
+      console.log('🗑️ AgentService.deleteAgent - Eliminando agente:', agentId);
+      
+      const agentDocRef = doc(db, 'agents', agentId);
+      await deleteDoc(agentDocRef);
+      
+      console.log('✅ AgentService.deleteAgent - Agente eliminado exitosamente');
+      
+      return {
+        success: true,
+        message: 'Agente eliminado exitosamente'
+      };
+    } catch (error) {
+      console.error('❌ AgentService.deleteAgent - Error:', error);
       return {
         success: false,
         error: error.message
