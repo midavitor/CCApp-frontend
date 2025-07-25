@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthService } from '../services/authService';
 import AgentService from '../services/agentService';
 import { useAuth } from '../context/AuthContext';
+import { auth } from '../services/firebaseConfig';
 
 const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
   const { user, agentData } = useAuth(); // Obtener el usuario actual y sus datos del contexto
@@ -59,27 +60,51 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
 
       console.log('✅ Usuario creado en Auth:', authResult.user.uid);
 
+      // Verificar que tenemos un usuario autenticado
+      console.log('🔍 Estado de autenticación actual:', {
+        currentUser: auth.currentUser?.email,
+        uid: auth.currentUser?.uid
+      });
+
       // Crear documento del agente en Firestore
-      const agentData = {
+      const newAgentData = {
         name: formData.name,
         email: formData.email,
         role: formData.role,
         teamID: formData.teamID || 'Sin asignar',
-        status: undefined, // Estado indefinido hasta implementar Twilio
-        dateCreated: new Date(),
+        status: 'pending', // Estado pendiente hasta activar cuenta
         uid: authResult.user.uid
       };
 
-      console.log('🔍 Creando documento en Firestore...', agentData);
-      const agentResult = await AgentService.createAgent(agentData);
+      console.log('🔍 Creando documento en Firestore...', newAgentData);
+      console.log('🔍 Usuario que creará el documento:', auth.currentUser?.email);
+      
+      // Test de escritura en Firestore antes del intento real
+      console.log('🔍 Ejecutando test de escritura en Firestore...');
+      const testResult = await AgentService.testFirestoreWrite();
+      console.log('🔍 Resultado del test de escritura:', testResult);
+      
+      if (!testResult.success) {
+        throw new Error(`Test de Firestore falló: ${testResult.error}`);
+      }
+      
+      const agentResult = await AgentService.createAgent(newAgentData);
       
       console.log('🔍 Resultado de Firestore:', agentResult);
       
       if (!agentResult.success) {
+        console.error('❌ Error detallado de Firestore:', agentResult);
+        
+        // Intentar diagnóstico adicional
+        console.log('🔍 Diagnóstico adicional:');
+        console.log('- Usuario actual:', auth.currentUser);
+        console.log('- Datos enviados:', newAgentData);
+        console.log('- Error específico:', agentResult.error);
+        
         throw new Error(`Error al guardar en Firestore: ${agentResult.error}`);
       }
 
-      console.log('✅ Agente creado exitosamente en Firestore');
+      console.log('✅ Agente creado exitosamente en Firestore con ID:', agentResult.id);
       
       // Éxito - cerrar modal y notificar
       onUserCreated();

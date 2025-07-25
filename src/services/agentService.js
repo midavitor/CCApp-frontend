@@ -13,7 +13,7 @@ import {
   onSnapshot,
   Timestamp 
 } from 'firebase/firestore';
-import { db } from './firebaseConfig';
+import { db, auth } from './firebaseConfig';
 
 /**
  * Servicio para manejar operaciones con agentes en Firestore
@@ -121,12 +121,27 @@ export class AgentService {
   static async createAgent(agentData) {
     try {
       console.log('🔍 AgentService.createAgent - Iniciando creación con datos:', agentData);
-      // Usar addDoc para crear un documento con ID autogenerado
-      const agentDocRef = await addDoc(collection(db, 'agents'), {
+      
+      // Verificar que hay un usuario autenticado
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('No hay usuario autenticado para crear el documento');
+      }
+      
+      console.log('🔍 Usuario autenticado:', currentUser.email);
+      
+      // Preparar datos para Firestore (evitar duplicación de campos)
+      const firestoreData = {
         ...agentData,
         dateCreated: new Date(),
         lastUpdated: new Date()
-      });
+      };
+      
+      console.log('🔍 Datos finales para Firestore:', firestoreData);
+      
+      // Usar addDoc para crear un documento con ID autogenerado
+      const agentDocRef = await addDoc(collection(db, 'agents'), firestoreData);
+      
       console.log('✅ AgentService.createAgent - Documento creado con ID:', agentDocRef.id);
       return {
         success: true,
@@ -134,13 +149,50 @@ export class AgentService {
         message: 'Agente creado exitosamente'
       };
     } catch (error) {
-      console.error('❌ AgentService.createAgent - Error:', error);
-      console.error('❌ Error details:', error.message);
+      console.error('❌ AgentService.createAgent - Error completo:', error);
+      console.error('❌ Error message:', error.message);
       console.error('❌ Error code:', error.code);
+      console.error('❌ Error stack:', error.stack);
       return {
         success: false,
-        error: error.message
+        error: error.message || 'Error desconocido al crear agente'
       };
+    }
+  }
+
+  /**
+   * Método de diagnóstico para verificar permisos de escritura en Firestore
+   * @returns {Promise<Object>} Resultado del test
+   */
+  static async testFirestoreWrite() {
+    try {
+      console.log('🔍 Testando escritura en Firestore...');
+      
+      const currentUser = auth.currentUser;
+      console.log('🔍 Usuario actual:', currentUser?.email, currentUser?.uid);
+      
+      if (!currentUser) {
+        return { success: false, error: 'No hay usuario autenticado' };
+      }
+      
+      // Intentar crear un documento de prueba
+      const testData = {
+        test: true,
+        timestamp: new Date(),
+        userId: currentUser.uid
+      };
+      
+      const testDocRef = await addDoc(collection(db, 'agents'), testData);
+      console.log('✅ Test de escritura exitoso, ID:', testDocRef.id);
+      
+      // Eliminar el documento de prueba
+      await deleteDoc(testDocRef);
+      console.log('✅ Documento de prueba eliminado');
+      
+      return { success: true, message: 'Firestore write test passed' };
+    } catch (error) {
+      console.error('❌ Test de escritura falló:', error);
+      return { success: false, error: error.message };
     }
   }
 
