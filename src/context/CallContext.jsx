@@ -19,13 +19,30 @@ export const useCall = () => {
  * Provider del contexto de llamadas
  */
 export const CallProvider = ({ children }) => {
-  const { agentData, isAuthenticated } = useAuth();
-  
   const [activeCalls, setActiveCalls] = useState([]);
   const [currentCall, setCurrentCall] = useState(null);
   const [callHistory, setCallHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Obtener datos de autenticación de forma segura
+  const [authData, setAuthData] = useState({ agentData: null, isAuthenticated: false });
+
+  // Efecto para obtener datos de autenticación
+  useEffect(() => {
+    try {
+      const authContext = useAuth();
+      setAuthData({
+        agentData: authContext.agentData,
+        isAuthenticated: authContext.isAuthenticated
+      });
+    } catch (error) {
+      // Si useAuth falla, mantener valores por defecto
+      setAuthData({ agentData: null, isAuthenticated: false });
+    }
+  }, []);
+
+  const { agentData, isAuthenticated } = authData;
 
   // Escuchar llamadas activas en tiempo real
   useEffect(() => {
@@ -47,7 +64,7 @@ export const CallProvider = ({ children }) => {
 
   // Cargar historial de llamadas del agente
   useEffect(() => {
-    if (!agentData) return;
+    if (!agentData?.agentID) return;
 
     // TEMPORALMENTE COMENTADO: Puede requerir índice de Firestore
     // const loadCallHistory = async () => {
@@ -71,7 +88,7 @@ export const CallProvider = ({ children }) => {
    * Iniciar una nueva llamada
    */
   const startCall = async (callData) => {
-    if (!agentData) {
+    if (!agentData?.agentID) {
       return { success: false, message: 'No hay agente autenticado' };
     }
 
@@ -120,10 +137,12 @@ export const CallProvider = ({ children }) => {
       
       if (result.success) {
         setCurrentCall(null);
-        // Recargar historial
-        const historyResult = await CallService.getCallsByAgent(agentData.agentID, 20);
-        if (historyResult.success) {
-          setCallHistory(historyResult.data);
+        // Recargar historial si hay datos del agente
+        if (agentData?.agentID) {
+          const historyResult = await CallService.getCallsByAgent(agentData.agentID, 20);
+          if (historyResult.success) {
+            setCallHistory(historyResult.data);
+          }
         }
       } else {
         setError(result.error || 'Error finalizando llamada');
@@ -159,7 +178,7 @@ export const CallProvider = ({ children }) => {
    * Refrescar datos de llamadas
    */
   const refreshData = async () => {
-    if (!agentData) return;
+    if (!agentData?.agentID) return;
 
     setLoading(true);
     try {

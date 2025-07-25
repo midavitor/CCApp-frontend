@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AuthService } from '../services/authService';
-import AgentService from '../services/agentService';
+import { AgentService } from '../services/agentService';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../services/firebaseConfig';
 
