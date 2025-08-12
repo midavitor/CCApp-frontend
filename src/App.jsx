@@ -4,6 +4,7 @@ import { CallProvider } from './context/CallContext';
 import { AgentService } from './services/agentService';
 import Login from './components/Login';
 import CreateUserModal from './components/CreateUserModal';
+import Dialpad from './components/Dialpad';
 import './App.css';
 
 // Componente principal de la aplicación
@@ -147,6 +148,12 @@ const AppContent = () => {
               >
                 Llamadas
               </button>
+              <button 
+                className={`tab-button ${activeTab === 'dialpad' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dialpad')}
+              >
+                📞 Dialpad
+              </button>
               {/* Pestaña Usuarios - Solo para supervisores */}
               {(agentData?.role === 'supervisor' || agentData?.role === 'admin') && (
                 <button 
@@ -242,6 +249,12 @@ const AppContent = () => {
                   <h3>Gestión de Llamadas</h3>
                   <p>Panel para manejar llamadas entrantes y salientes.</p>
                   {/* Aquí se agregará el CallPanel de Twilio */}
+                </div>
+              )}
+
+              {activeTab === 'dialpad' && (
+                <div className="tab-panel">
+                  <Dialpad />
                 </div>
               )}
 
