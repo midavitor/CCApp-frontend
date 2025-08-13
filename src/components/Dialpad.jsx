@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import dialpadService from '../services/dialpadService';
+import { useErrorHandler, useNetworkErrorHandler, usePermissionErrorHandler } from '../hooks/useErrorHandler';
+import DebugPanel from './DebugPanel';
 import './Dialpad.css';
+import './DebugPanel.css';
 
 const Dialpad = () => {
   // Estados del componente
@@ -13,6 +16,25 @@ const Dialpad = () => {
   const [microphonePermission, setMicrophonePermission] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+
+  // Error handlers
+  const {
+    error: generalError,
+    executeWithErrorHandling,
+    retry,
+    clearError
+  } = useErrorHandler({
+    maxRetries: 3,
+    retryDelay: 1000,
+    onError: (error, context) => {
+      console.error('Error en Dialpad:', error, context);
+      setMessage(`❌ ${error.message}`);
+      setMessageType('error');
+    }
+  });
+
+  const { networkError, isOnline, handleNetworkError } = useNetworkErrorHandler();
+  const { permissionError, handlePermissionError, requestPermissions } = usePermissionErrorHandler();
 
   // Números del dialpad
   const dialpadNumbers = [
@@ -134,7 +156,7 @@ const Dialpad = () => {
   };
 
   /**
-   * Realizar llamada
+   * Realizar llamada con manejo de errores mejorado
    */
   const makeCall = async () => {
     if (!phoneNumber.trim()) {
@@ -144,37 +166,53 @@ const Dialpad = () => {
     }
 
     setIsLoading(true);
-    setMessage('🔄 Solicitando permisos de micrófono...');
+    setMessage('🔄 Iniciando llamada...');
     setMessageType('info');
+    clearError();
 
-    try {
-      const result = await dialpadService.makeCall(phoneNumber);
+    const result = await executeWithErrorHandling(
+      async () => {
+        // Manejar errores de permisos específicamente
+        try {
+          const callResult = await dialpadService.makeCall(phoneNumber);
+          
+          if (!callResult.success) {
+            // Verificar si es error de red
+            if (handleNetworkError(new Error(callResult.message))) {
+              throw new Error('Error de conexión con el servidor');
+            }
+            
+            throw new Error(callResult.message);
+          }
+          
+          return callResult;
+        } catch (error) {
+          // Manejar errores de permisos
+          if (handlePermissionError(error)) {
+            throw new Error('Se requieren permisos de micrófono para realizar llamadas');
+          }
+          
+          throw error;
+        }
+      },
+      { action: 'makeCall', phoneNumber }
+    );
+
+    if (result.success) {
+      setCurrentCall(dialpadService.getCurrentCall());
+      setMicrophonePermission(dialpadService.hasMicrophonePermission());
+      setMessage(`✅ ${result.data.message}`);
+      setMessageType('success');
       
-      if (result.success) {
-        setCurrentCall(dialpadService.getCurrentCall());
-        setMicrophonePermission(dialpadService.hasMicrophonePermission());
-        setMessage(`✅ ${result.message}`);
-        setMessageType('success');
-        
-        // Iniciar monitoreo de audio si la llamada tiene audio
-        if (result.audioEnabled) {
-          startAudioMonitoring();
-        }
-        
-        // Si usa Twilio, mostrar mensaje específico
-        if (result.twilioDevice) {
-          setMessage(`✅ Llamada iniciada - Esperando conexión WebRTC...`);
-        }
-      } else {
-        setMessage(`❌ ${result.message}`);
-        setMessageType('error');
+      if (result.data.audioEnabled) {
+        startAudioMonitoring();
       }
-    } catch (error) {
-      setMessage(`❌ Error inesperado: ${error.message}`);
+    } else {
+      setMessage(`❌ ${result.error}`);
       setMessageType('error');
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   /**
@@ -258,6 +296,76 @@ const Dialpad = () => {
       {message && (
         <div className={`message ${messageType}`}>
           {message}
+        </div>
+      )}
+
+      {/* Error de red */}
+      {networkError && (
+        <div className="error-banner network-error">
+          <div className="error-content">
+            <span className="error-icon">🌐</span>
+            <div>
+              <strong>{isOnline ? 'Error de Servidor' : 'Sin Conexión'}</strong>
+              <p>{networkError.message}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn btn-sm btn-outline"
+          >
+            🔄 Recargar
+          </button>
+        </div>
+      )}
+
+      {/* Error de permisos */}
+      {permissionError && (
+        <div className="error-banner permission-error">
+          <div className="error-content">
+            <span className="error-icon">🔒</span>
+            <div>
+              <strong>Permisos Requeridos</strong>
+              <p>{permissionError.message}</p>
+              <small>{permissionError.suggestion}</small>
+            </div>
+          </div>
+          <button 
+            onClick={() => requestPermissions('microphone')} 
+            className="btn btn-sm btn-primary"
+          >
+            🎙️ Permitir Micrófono
+          </button>
+        </div>
+      )}
+
+      {/* Error general con opción de reintentar */}
+      {generalError && (
+        <div className="error-banner general-error">
+          <div className="error-content">
+            <span className="error-icon">⚠️</span>
+            <div>
+              <strong>Error en la Aplicación</strong>
+              <p>{generalError.message}</p>
+              {generalError.retryCount > 0 && (
+                <small>Reintento {generalError.retryCount} de 3</small>
+              )}
+            </div>
+          </div>
+          <div className="error-actions">
+            <button 
+              onClick={clearError} 
+              className="btn btn-sm btn-outline"
+            >
+              ✕ Cerrar
+            </button>
+            <button 
+              onClick={() => retry(() => dialpadService.makeCall(phoneNumber))} 
+              className="btn btn-sm btn-primary"
+              disabled={!phoneNumber || isLoading}
+            >
+              🔄 Reintentar
+            </button>
+          </div>
         </div>
       )}
 
@@ -426,6 +534,14 @@ const Dialpad = () => {
           🔄 Verificar Servicio
         </button>
       </div>
+
+      {/* Debug Panel - Solo en desarrollo */}
+      <DebugPanel
+        errors={generalError ? [generalError] : []}
+        currentCall={currentCall}
+        serviceStatus={serviceStatus}
+        twilioStatus={dialpadService.getTwilioDeviceStatus ? dialpadService.getTwilioDeviceStatus() : null}
+      />
     </div>
   );
 };

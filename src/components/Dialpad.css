@@ -614,3 +614,168 @@
     font-size: 0.9rem;
   }
 }
+
+/* Error Boundary - Error banners mejorados */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-radius: 8px;
+  border-left: 4px solid;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.error-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.error-content div {
+  flex: 1;
+}
+
+.error-content strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.error-content p {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.error-content small {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+.error-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Tipos específicos de error */
+.network-error {
+  background: #fff5f5;
+  border-color: #e53e3e;
+  color: #742a2a;
+}
+
+.permission-error {
+  background: #fffaf0;
+  border-color: #dd6b20;
+  color: #7c2d12;
+}
+
+.general-error {
+  background: #f7fafc;
+  border-color: #4299e1;
+  color: #2a4365;
+}
+
+/* Botones mejorados específicos para errores */
+.error-banner .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.error-banner .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-banner .btn:active {
+  transform: translateY(0);
+}
+
+.error-banner .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-banner .btn-primary {
+  background: #4299e1;
+  color: white;
+  border-color: #4299e1;
+}
+
+.error-banner .btn-primary:hover:not(:disabled) {
+  background: #3182ce;
+  border-color: #3182ce;
+}
+
+.error-banner .btn-outline {
+  background: transparent;
+  color: #4299e1;
+  border-color: #4299e1;
+}
+
+.error-banner .btn-outline:hover:not(:disabled) {
+  background: #4299e1;
+  color: white;
+}
+
+.error-banner .btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* Responsive para error banners */
+@media (max-width: 640px) {
+  .error-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .error-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .error-actions {
+    justify-content: center;
+  }
+  
+  .error-banner .btn {
+    flex: 1;
+    min-width: 100px;
+  }
+}

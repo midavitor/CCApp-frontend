@@ -1,0 +1,155 @@
+/**
+ * Estilos para Debug Panel
+ */
+
+.debug-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.debug-toggle {
+  background: #2d3748;
+  color: #e2e8f0;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.debug-toggle:hover {
+  background: #4a5568;
+  transform: translateY(-1px);
+}
+
+.debug-content {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  background: #1a202c;
+  color: #e2e8f0;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  max-width: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  animation: debugSlideUp 0.2s ease-out;
+}
+
+@keyframes debugSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.debug-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid #4a5568;
+}
+
+.debug-section:last-child {
+  border-bottom: none;
+}
+
+.debug-section h4 {
+  margin: 0 0 8px 0;
+  color: #63b3ed;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.debug-item {
+  margin: 4px 0;
+  display: flex;
+  gap: 8px;
+}
+
+.debug-item strong {
+  color: #90cdf4;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.debug-error {
+  background: #2d1b1b;
+  border: 1px solid #e53e3e;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 8px 0;
+}
+
+.debug-actions {
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  background: #2d3748;
+  border-top: 1px solid #4a5568;
+}
+
+.debug-btn {
+  background: #4a5568;
+  color: #e2e8f0;
+  border: 1px solid #718096;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.debug-btn:hover {
+  background: #718096;
+  transform: translateY(-1px);
+}
+
+/* Scrollbar personalizado para el panel de debug */
+.debug-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debug-content::-webkit-scrollbar-track {
+  background: #2d3748;
+}
+
+.debug-content::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 3px;
+}
+
+.debug-content::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 480px) {
+  .debug-panel {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  .debug-content {
+    max-width: calc(100vw - 40px);
+    right: -10px;
+  }
+  
+  .debug-actions {
+    flex-direction: column;
+  }
+}

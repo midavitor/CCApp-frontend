@@ -5,7 +5,9 @@ import { AgentService } from './services/agentService';
 import Login from './components/Login';
 import CreateUserModal from './components/CreateUserModal';
 import Dialpad from './components/Dialpad';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
+import './components/ErrorBoundary.css';
 
 // Componente principal de la aplicación
 const AppContent = () => {
@@ -254,14 +256,33 @@ const AppContent = () => {
 
               {activeTab === 'dialpad' && (
                 <div className="tab-panel">
-                  <Dialpad />
+                  <ErrorBoundary
+                    level="component"
+                    name="Dialpad"
+                    fallback={(error, retry) => (
+                      <div className="dialpad-error">
+                        <h3>🎙️ Error en el Sistema de Llamadas</h3>
+                        <p>No se pudo cargar el componente de llamadas.</p>
+                        <button onClick={retry} className="btn btn-primary">
+                          🔄 Reintentar
+                        </button>
+                      </div>
+                    )}
+                  >
+                    <Dialpad />
+                  </ErrorBoundary>
                 </div>
               )}
 
               {activeTab === 'users' && (agentData?.role === 'supervisor' || agentData?.role === 'admin') && (
-                <div className="tab-panel">
-                  <h3>Gestión de Usuarios</h3>
-                  <p>Panel de administración para gestionar agentes del call center.</p>
+                <ErrorBoundary
+                  level="component"
+                  name="UserManagement"
+                  userId={agentData?.id}
+                >
+                  <div className="tab-panel">
+                    <h3>Gestión de Usuarios</h3>
+                    <p>Panel de administración para gestionar agentes del call center.</p>
                   
                   {/* Sección de estadísticas de usuarios */}
                   <div className="users-stats">
@@ -360,6 +381,7 @@ const AppContent = () => {
                     )}
                   </div>
                 </div>
+                </ErrorBoundary>
               )}
 
               {activeTab === 'reports' && (
@@ -394,11 +416,26 @@ const AppContent = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <CallProvider>
-        <AppContent />
-      </CallProvider>
-    </AuthProvider>
+    <ErrorBoundary 
+      level="app" 
+      name="CCApp-Main"
+    >
+      <AuthProvider>
+        <ErrorBoundary 
+          level="component" 
+          name="AuthProvider"
+        >
+          <CallProvider>
+            <ErrorBoundary 
+              level="component" 
+              name="CallProvider"
+            >
+              <AppContent />
+            </ErrorBoundary>
+          </CallProvider>
+        </ErrorBoundary>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
